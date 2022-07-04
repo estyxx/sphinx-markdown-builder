@@ -161,14 +161,16 @@ https://github.com/cgwrench/rst2md
 
 from __future__ import unicode_literals
 
+import posixpath
 import re
 from textwrap import dedent
-import posixpath
 
-__docformat__ = 'reStructuredText'
+__docformat__ = "reStructuredText"
 
-from docutils import frontend, nodes, writers, languages
 from collections import OrderedDict
+
+from docutils import frontend, languages, nodes, writers
+
 
 class IndentLevel(object):
     """Class to hold text being written for a certain indentation level.
@@ -182,6 +184,7 @@ class IndentLevel(object):
 
     In most respects, IndentLevel behaves like a list.
     """
+
     def __init__(self, base, prefix, first_prefix=None):
         self.base = base  # The list to which we eventually write
         self.prefix = prefix  # Text prepended to lines
@@ -211,17 +214,18 @@ class IndentLevel(object):
         Empty (all whitespace) lines get written as bare carriage returns, to
         avoid ugly extra whitespace.
         """
-        string = ''.join(self.content)
+        string = "".join(self.content)
         lines = string.splitlines(True)
         if len(lines) == 0:
             return
         texts = [self.first_prefix + lines[0]]
         for line in lines[1:]:
-            if line.strip() == '':  # avoid prefix for empty lines
-                texts.append('\n')
+            if line.strip() == "":  # avoid prefix for empty lines
+                texts.append("\n")
             else:
                 texts.append(self.prefix + line)
-        self.base.append(''.join(texts))
+        self.base.append("".join(texts))
+
 
 def _make_method(to_add):
     """Make a method that adds `to_add`
@@ -229,79 +233,84 @@ def _make_method(to_add):
     We need this function so that `to_add` is a fresh and unique
     variable at the time the method is defined.
     """
+
     def method(self, node):
         self.add(to_add)
 
     return method
 
+
 def add_pref_suff(pref_suff_map):
     """Decorator adds visit, depart methods for prefix/suffix pairs."""
+
     def dec(cls):
         # Need _make_method to ensure new variable picked up for each iteration
         # of the loop.  The defined method picks up this new variable in its
         # scope.
         for key, (prefix, suffix) in pref_suff_map.items():
-            setattr(cls, 'visit_' + key, _make_method(prefix))
-            setattr(cls, 'depart_' + key, _make_method(suffix))
+            setattr(cls, "visit_" + key, _make_method(prefix))
+            setattr(cls, "depart_" + key, _make_method(suffix))
         return cls
 
     return dec
 
+
 def add_pass_thru(pass_thrus):
     """Decorator adds explicit pass-through visit and depart methods."""
+
     def meth(self, node):
         pass
 
     def dec(cls):
         for element_name in pass_thrus:
-            for meth_prefix in ('visit_', 'depart_'):
+            for meth_prefix in ("visit_", "depart_"):
                 meth_name = meth_prefix + element_name
                 if hasattr(cls, meth_name):
-                    raise ValueError(
-                        'method name {} already defined'.format(meth_name)
-                    )
+                    raise ValueError("method name {} already defined".format(meth_name))
                 setattr(cls, meth_name, meth)
         return cls
 
     return dec
 
+
 # Characters that should be escaped in Markdown
-ESCAPE_RE = re.compile(r'([\\*`])')
+ESCAPE_RE = re.compile(r"([\\*`])")
 
 # Doctree elements for which Markdown element is <prefix><content><suffix>
 PREF_SUFF_ELEMENTS = {
-    'emphasis': ('*', '*'),  # Could also use ('_', '_')
-    'strong': ('**', '**'),  # Could also use ('__', '__')
-    'literal': ('`', '`'),
-    'subscript': ('<sub>', '</sub>'),
-    'superscript': ('<sup>', '</sup>'),
+    "emphasis": ("*", "*"),  # Could also use ('_', '_')
+    "strong": ("**", "**"),  # Could also use ('__', '__')
+    "literal": ("`", "`"),
+    "subscript": ("<sub>", "</sub>"),
+    "superscript": ("<sup>", "</sup>"),
 }
 
 # Doctree elements explicitly passed through without extra markup
 PASS_THRU_ELEMENTS = (
-    'document',
-    'container',
-    'target',
-    'inline',
-    'definition_list',
-    'definition_list_item',
-    'term',
-    'field_list',
-    'field_list_item',
-    'field',
-    'field_name',
-    'mpl_hint',
-    'pending_xref',
-    'compound',
-    'line',
-    'line_block',
+    "document",
+    "container",
+    "target",
+    "inline",
+    "definition_list",
+    "definition_list_item",
+    "term",
+    "field_list",
+    "field_list_item",
+    "field",
+    "field_name",
+    "mpl_hint",
+    "pending_xref",
+    "compound",
+    "line",
+    "line_block",
 )
+
 
 @add_pass_thru(PASS_THRU_ELEMENTS)
 @add_pref_suff(PREF_SUFF_ELEMENTS)
 class Translator(nodes.NodeVisitor):
 
-    std_indent = '    '
+    std_indent = "    "
 
     def __init__(self, document, builder=None):
         nodes.NodeVisitor.__init__(self, document)
@@ -311,13 +320,11 @@ class Translator(nodes.NodeVisitor):
         self.language = languages.get_language(lcode, document.reporter)
         # Not-None here indicates Markdown should use HTTP for internal and
         # download links.
-        self.markdown_http_base = (
-            builder.markdown_http_base if builder else None
-        )
+        self.markdown_http_base = builder.markdown_http_base if builder else None
         # Warn only once per writer about unsupported elements
         self._warned = set()
         # Lookup table to get section list from name
-        self._lists = OrderedDict((('head', []), ('body', []), ('foot', [])))
+        self._lists = OrderedDict((("head", []), ("body", []), ("foot", [])))
         # Reset attributes modified by reading
         self.reset()
         # Attribute shortcuts
@@ -351,24 +358,21 @@ class Translator(nodes.NodeVisitor):
 
     def astext(self):
         """Return the final formatted document as a string."""
-        parts = [''.join(lines).strip() for lines in self._lists.values()]
-        parts = [part + '\n\n' for part in parts if part]
-        return ''.join(parts).strip() + '\n'
+        parts = ["".join(lines).strip() for lines in self._lists.values()]
+        parts = [part + "\n\n" for part in parts if part]
+        return "".join(parts).strip() + "\n"
 
     def ensure_eol(self):
         """Ensure the last line in current base is terminated by new line."""
         out = self.get_current_output()
-        if out and out[-1] and out[-1][-1] != '\n':
-            out.append('\n')
+        if out and out[-1] and out[-1][-1] != "\n":
+            out.append("\n")
 
-    def get_current_output(self, section='body'):
+    def get_current_output(self, section="body"):
         """Get list or IndentLevel to which we are currently writing."""
-        return (
-            self.indent_levels[-1]
-            if self.indent_levels else self._lists[section]
-        )
+        return self.indent_levels[-1] if self.indent_levels else self._lists[section]
 
-    def add(self, string, section='body'):
+    def add(self, string, section="body"):
         """Add `string` to `section` or current output.
 
         Parameters
@@ -383,7 +387,7 @@ class Translator(nodes.NodeVisitor):
         """
         self.get_current_output(section).append(string)
 
-    def add_section(self, string, section='body'):
+    def add_section(self, string, section="body"):
         """Add `string` to `section` regardless of current output.
 
         Can be useful when forcing write to header or footer.
@@ -397,11 +401,12 @@ class Translator(nodes.NodeVisitor):
         """
         self._lists[section].append(string)
 
-    def start_level(self, prefix, first_prefix=None, section='body'):
+    def start_level(self, prefix, first_prefix=None, section="body"):
         """Create a new IndentLevel with `prefix` and `first_prefix`"""
         base = (
             self.indent_levels[-1].content
-            if self.indent_levels else self._lists[section]
+            if self.indent_levels
+            else self._lists[section]
         )
         level = IndentLevel(base, prefix, first_prefix)
         self.indent_levels.append(level)
@@ -413,10 +418,10 @@ class Translator(nodes.NodeVisitor):
 
     def escape_chars(self, txt):
         # Escape (some) characters with special meaning for Markdown
-        return ESCAPE_RE.sub(r'\\\1', txt)
+        return ESCAPE_RE.sub(r"\\\1", txt)
 
     def visit_Text(self, node):
-        text = node.astext().replace('\r\n', '\n')
+        text = node.astext().replace("\r\n", "\n")
         if self._escape_text:
             text = self.escape_chars(text)
         self.add(text)
@@ -427,7 +432,7 @@ class Translator(nodes.NodeVisitor):
     def visit_comment(self, node):
         txt = node.astext()
         if txt.strip():
-            self.add('<!-- ' + node.astext() + ' -->\n')
+            self.add("<!-- " + node.astext() + " -->\n")
         raise nodes.SkipNode
 
     def visit_docinfo(self, node):
@@ -438,12 +443,12 @@ class Translator(nodes.NodeVisitor):
 
     def process_docinfo_item(self, node):
         """Called explicitly from methods in this class."""
-        self.add_section('% {}\n'.format(node.astext()), section='head')
+        self.add_section("% {}\n".format(node.astext()), section="head")
         raise nodes.SkipNode
 
     def visit_definition(self, node):
-        self.add('\n\n')
-        self.start_level('    ')
+        self.add("\n\n")
+        self.start_level("    ")
 
     def depart_definition(self, node):
         self.finish_level()
@@ -457,57 +462,57 @@ class Translator(nodes.NodeVisitor):
 
     def depart_paragraph(self, node):
         self.ensure_eol()
-        self.add('\n')
+        self.add("\n")
 
     def visit_math_block(self, node):
         # docutils math block
         self._escape_text = False
-        self.add('$$\n')
+        self.add("$$\n")
 
     def depart_math_block(self, node):
         self._escape_text = True
         self.ensure_eol()
-        self.add('$$\n\n')
+        self.add("$$\n\n")
 
     def visit_displaymath(self, node):
         # sphinx math blocks become displaymath
-        self.add('$$\n{}\n$$\n\n'.format(node['latex']))
+        self.add("$$\n{}\n$$\n\n".format(node["latex"]))
         raise nodes.SkipNode
 
     def visit_math(self, node):
         # sphinx math node has 'latex' attribute, docutils does not
-        if 'latex' in node:  # sphinx math node
-            self.add('${}$'.format(node['latex']))
+        if "latex" in node:  # sphinx math node
+            self.add("${}$".format(node["latex"]))
             raise nodes.SkipNode
         # docutils math node
         self._escape_text = False
-        self.add('$')
+        self.add("$")
 
     def depart_math(self, node):
         # sphinx node skipped in visit, only docutils gets here
         self._escape_text = True
-        self.add('$')
+        self.add("$")
 
     def visit_literal_block(self, node):
         self._escape_text = False
-        code_type = node['classes'][1] if 'code' in node['classes'] else ''
-        if 'language' in node:
-            code_type = node['language']
-        self.add('```' + code_type + '\n')
+        code_type = node["classes"][1] if "code" in node["classes"] else ""
+        if "language" in node:
+            code_type = node["language"]
+        self.add("```" + code_type + "\n")
 
     def depart_literal_block(self, node):
         self._escape_text = True
         self.ensure_eol()
-        self.add('```\n\n')
+        self.add("```\n\n")
 
     def visit_doctest_block(self, node):
         self._escape_text = False
-        self.add('```python\n')
+        self.add("```python\n")
 
     depart_doctest_block = depart_literal_block
 
     def visit_block_quote(self, node):
-        self.start_level('> ')
+        self.start_level("> ")
 
     def depart_block_quote(self, node):
         self.finish_level()
@@ -519,77 +524,77 @@ class Translator(nodes.NodeVisitor):
         self.section_level -= 1
 
     def visit_enumerated_list(self, node):
-        self.list_prefixes.append('1. ')
+        self.list_prefixes.append("1. ")
 
     def depart_enumerated_list(self, node):
         self.list_prefixes.pop()
 
     def visit_bullet_list(self, node):
-        self.list_prefixes.append('* ')
+        self.list_prefixes.append("* ")
 
     depart_bullet_list = depart_enumerated_list
 
     def visit_list_item(self, node):
         first_prefix = self.list_prefixes[-1]
-        prefix = ' ' * len(first_prefix)
+        prefix = " " * len(first_prefix)
         self.start_level(prefix, first_prefix)
 
     def depart_list_item(self, node):
         self.finish_level()
 
     def visit_problematic(self, node):
-        self.add('\n\n```\n{}\n```\n\n'.format(node.astext()))
+        self.add("\n\n```\n{}\n```\n\n".format(node.astext()))
         raise nodes.SkipNode
 
     def visit_system_message(self, node):
-        if node['level'] < self.document.reporter.report_level:
+        if node["level"] < self.document.reporter.report_level:
             # Level is too low to display
             raise nodes.SkipNode
-        line = ', line %s' % node['line'] if node.hasattr('line') else ''
+        line = ", line %s" % node["line"] if node.hasattr("line") else ""
         self.add(
-            '```\nSystem Message: {}:{}\n\n{}\n```\n\n'.format(
-                node['source'], line, node.astext()
+            "```\nSystem Message: {}:{}\n\n{}\n```\n\n".format(
+                node["source"], line, node.astext()
             )
         )
         raise nodes.SkipNode
 
     def visit_title(self, node):
-        self.add((self.section_level + 1) * '#' + ' ')
+        self.add((self.section_level + 1) * "#" + " ")
 
     def depart_title(self, node):
         self.ensure_eol()
-        self.add('\n')
+        self.add("\n")
 
     def visit_subtitle(self, node):
-        self.add((self.section_level + 2) * '#' + ' ')
+        self.add((self.section_level + 2) * "#" + " ")
 
     depart_subtitle = depart_title
 
     def visit_transition(self, node):
         # Simply replace a transition by a horizontal rule.
         # Could use three or more '*', '_' or '-'.
-        self.add('\n---\n\n')
+        self.add("\n---\n\n")
         raise nodes.SkipNode
 
     def _refuri2http(self, node):
         # Replace 'refuri' in reference with HTTP address, if possible
         # None for no possible address
-        url = node.get('refuri')
-        if not node.get('internal'):
+        url = node.get("refuri")
+        if not node.get("internal"):
             return url
         # If HTTP page build URL known, make link relative to that.
         if not self.markdown_http_base:
             return node.get("refuri")
         this_doc = self.builder.current_docname
-        if url in (None, ''):  # Reference to this doc
+        if url in (None, ""):  # Reference to this doc
             url = self.builder.get_target_uri(this_doc)
         else:  # URL is relative to the current docname.
             this_dir = posixpath.dirname(this_doc)
             if this_dir:
-                url = posixpath.normpath('{}/{}'.format(this_dir, url))
-        url = '{}/{}'.format(self.markdown_http_base, url)
-        if 'refid' in node:
-            url += '#' + node['refid']
+                url = posixpath.normpath("{}/{}".format(this_dir, url))
+        url = "{}/{}".format(self.markdown_http_base, url)
+        if "refid" in node:
+            url += "#" + node["refid"]
         return url
 
     def visit_reference(self, node):
@@ -597,10 +602,10 @@ class Translator(nodes.NodeVisitor):
         url = self._refuri2http(node)
         if url is None:
             return
-        self.add('[')
+        self.add("[")
         for child in node.children:
             child.walkabout(self)
-        self.add(']({})'.format(url))
+        self.add("]({})".format(url))
         raise nodes.SkipNode
 
     def depart_reference(self, node):
@@ -625,8 +630,8 @@ class Translator(nodes.NodeVisitor):
         raise nodes.SkipNode
 
     def visit_only(self, node):
-        if node['expr'] == 'markdown':
-            self.add(dedent(node.astext()) + '\n')
+        if node["expr"] == "markdown":
+            self.add(dedent(node.astext()) + "\n")
         raise nodes.SkipNode
 
     def visit_runrole_reference(self, node):
@@ -635,13 +640,11 @@ class Translator(nodes.NodeVisitor):
     def visit_download_reference(self, node):
         # If not resolving internal links, or there is no filename specified,
         # pass through.
-        filename = node.get('filename')
+        filename = node.get("filename")
         if None in (self.markdown_http_base, filename):
             return
-        target_url = '{}/_downloads/{}'.format(
-            self.markdown_http_base, filename
-        )
-        self.add('[{}]({})'.format(node.astext(), target_url))
+        target_url = "{}/_downloads/{}".format(self.markdown_http_base, filename)
+        self.add("[{}]({})".format(node.astext(), target_url))
         raise nodes.SkipNode
 
     def depart_download_reference(self, node):
@@ -669,14 +672,15 @@ class Translator(nodes.NodeVisitor):
         node_type = node.__class__.__name__
         if node_type not in self._warned:
             self.document.reporter.warning(
-                'The ' + node_type + ' element not yet supported in Markdown.'
+                "The " + node_type + " element not yet supported in Markdown."
             )
             self._warned.add(node_type)
         raise nodes.SkipNode
 
+
 class Writer(writers.Writer):
 
-    supported = ('markdown', )
+    supported = ("markdown",)
     """Formats this writer supports."""
 
     output = None
@@ -684,23 +688,28 @@ class Writer(writers.Writer):
 
     # Add configuration settings for additional Markdown flavours here.
     settings_spec = (
-        'Markdown-Specific Options', None, (
+        "Markdown-Specific Options",
+        None,
+        (
             (
-                'Extended Markdown syntax.', ['--extended-markdown'], {
-                    'default': 0,
-                    'action': 'store_true',
-                    'validator': frontend.validate_boolean
-                }
-            ),
-            (
-                'Strict Markdown syntax. Default: true', ['--strict-markdown'],
+                "Extended Markdown syntax.",
+                ["--extended-markdown"],
                 {
-                    'default': 1,
-                    'action': 'store_true',
-                    'validator': frontend.validate_boolean
-                }
+                    "default": 0,
+                    "action": "store_true",
+                    "validator": frontend.validate_boolean,
+                },
             ),
-        )
+            (
+                "Strict Markdown syntax. Default: true",
+                ["--strict-markdown"],
+                {
+                    "default": 1,
+                    "action": "store_true",
+                    "validator": frontend.validate_boolean,
+                },
+            ),
+        ),
     )
 
     translator_class = Translator

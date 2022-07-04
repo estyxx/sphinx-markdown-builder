@@ -14,7 +14,7 @@ a:hover {
   color: #ffffff !important;
 }
 
-.wy-form input[name=q] {
+.wy-form input[name='q'] {
   border-width: 0px;
 }
 
@@ -26,10 +26,11 @@ a:hover {
   color: #dd8800;
 }
 
-.wy-nav-top, .wy-side-nav-search {
+.wy-nav-top,
+.wy-side-nav-search {
   background-color: #ff9900;
 }
 
-.wy-side-nav-search>div.version {
-  color: rgba(255,255,255,0.5);
+.wy-side-nav-search > div.version {
+  color: rgba(255, 255, 255, 0.5);
 }

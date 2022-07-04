@@ -109,3 +109,4 @@ venv.bak/
 README.rst
 *.deb
 .tern-port
+.vscode/**

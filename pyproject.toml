@@ -1,0 +1,32 @@
+[tool.poetry]
+name = "sphinx-markdown-builder"
+version = "0.5.5"
+description = "sphinx builder that outputs markdown files"
+authors = ["Jam Risser <jam@codejam.ninja>"]
+license = "MIT"
+readme = "README.md"
+keywords=["sphinx", "docs", "documentation", "markdown"]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Intended Audience :: Developers",
+  "Topic :: Utilities",
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3.7",
+  "Programming Language :: Python :: 3.8",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+]
+
+[tool.poetry.dependencies]
+python = "^3.7"
+html2text = "^2020.1.16"
+pydash = "^5.1.0"
+Sphinx = "^5.0.2"
+unify = "^0.5"
+yapf = "^0.32.0"
+
+[tool.poetry.dev-dependencies]
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"

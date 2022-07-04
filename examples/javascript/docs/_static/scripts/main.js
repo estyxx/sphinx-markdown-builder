@@ -9,6 +9,6 @@ function ready(cb) {
     document.addEventListener('DOMContentLoaded', cb);
   }
 }
-ready(function() {
+ready(function () {
   // put custom scripts here
 });
