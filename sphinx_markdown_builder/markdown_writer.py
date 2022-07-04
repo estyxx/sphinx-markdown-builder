@@ -69,6 +69,9 @@ class MarkdownTranslator(Translator):
         # module preroll for class/method
         pass
 
+    def depart_desc_returns(self, node):
+        pass
+
     def visit_desc_name(self, node):
         # name of the class/method
         # Escape "__" which is a formating string for markdown
